@@ -1,8 +1,17 @@
+"use client";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+
 export default function Home() {
-  return (
-    <main style={{ padding: 40 }}>
-      <h1>Surge Hiring Copilot</h1>
-      <p>Sprint 1 – deployment check</p>
-    </main>
-  );
+  const [status, setStatus] = useState("checking...");
+  useEffect(() => {
+    supabase.auth
+      .getSession()
+      .then(({ error }) =>
+        setStatus(
+          error ? `Supabase error: ${error.message}` : "Supabase connected",
+        ),
+      );
+  }, []);
+  return <main className="p-8">{status}</main>;
 }
