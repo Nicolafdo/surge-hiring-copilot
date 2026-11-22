@@ -1,20 +1,10 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import RoleGuard from "@/lib/components/RoleGuard";
 import { useAuth } from "@/lib/auth/AuthProvider";
-
-type Row = {
-  id: string;
-  role_title: string;
-  role_level: string;
-  headcount: number;
-  needed_by: string;
-  status: string;
-  submitted_at: string;
-  submitted_by_name: string | null;
-};
+import FinanceReview, { type ReqRow } from "@/lib/components/FinanceReview";
 
 const STATUS: Record<string, string> = {
   pending_finance: "Waiting for Finance",
@@ -24,33 +14,34 @@ const STATUS: Record<string, string> = {
 
 function List() {
   const { profile } = useAuth();
-  const [rows, setRows] = useState<Row[] | null>(null);
+  const [rows, setRows] = useState<ReqRow[] | null>(null);
   const [err, setErr] = useState("");
+  const [selected, setSelected] = useState<ReqRow | null>(null);
+
+  const load = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("requisitions")
+      .select(
+        "id, role_title, role_level, skills, headcount, needed_by, project_need, status, submitted_at, submitted_by_name, salary_min, salary_max, salary_currency, finance_comment",
+      )
+      .order("submitted_at", { ascending: false });
+    if (error) {
+      console.error(error);
+      setErr("Could not load requisitions.");
+      return;
+    }
+    setRows(data as ReqRow[]);
+  }, []);
 
   useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase
-        .from("requisitions")
-        .select(
-          "id, role_title, role_level, headcount, needed_by, status, submitted_at, submitted_by_name",
-        )
-        .order("submitted_at", { ascending: false });
-      if (error) {
-        console.error(error);
-        setErr("Could not load requisitions.");
-        return;
-      }
-      setRows(data as Row[]);
-    })();
-  }, []);
+    load();
+  }, [load]);
+
+  const isFinance = profile?.role === "finance";
 
   return (
     <main className="p-8">
-      <h1>
-        {profile?.role === "finance"
-          ? "Requisitions to review"
-          : "My requisitions"}
-      </h1>
+      <h1>{isFinance ? "Requisitions to review" : "My requisitions"}</h1>
       {profile?.role === "pm" && (
         <p>
           <Link href="/requisitions/new/">New requisition</Link>
@@ -68,8 +59,10 @@ function List() {
               <th>Headcount</th>
               <th>Needed by</th>
               <th>Submitted by</th>
-              <th>Submitted</th>
               <th>Status</th>
+              <th>Approved salary range</th>
+              <th>Finance comment</th>
+              {isFinance && <th></th>}
             </tr>
           </thead>
           <tbody>
@@ -80,12 +73,35 @@ function List() {
                 <td>{r.headcount}</td>
                 <td>{r.needed_by}</td>
                 <td>{r.submitted_by_name}</td>
-                <td>{new Date(r.submitted_at).toLocaleString()}</td>
                 <td>{STATUS[r.status] ?? r.status}</td>
+                <td>
+                  {r.salary_min != null && r.salary_max != null
+                    ? `${r.salary_currency} ${Number(r.salary_min).toLocaleString()} – ${Number(r.salary_max).toLocaleString()} / month`
+                    : "—"}
+                </td>
+                <td>{r.finance_comment ?? "—"}</td>
+                {isFinance && (
+                  <td>
+                    {r.status === "pending_finance" && (
+                      <button onClick={() => setSelected(r)}>Review</button>
+                    )}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
+      )}
+      {isFinance && selected && (
+        <FinanceReview
+          key={selected.id}
+          row={selected}
+          onCancel={() => setSelected(null)}
+          onDone={() => {
+            setSelected(null);
+            load();
+          }}
+        />
       )}
     </main>
   );
