@@ -22,7 +22,7 @@ export const ROLE_LABEL: Record<Role, string> = {
 // Placeholder menus. Each link becomes a real page when its feature is built.
 export const NAV: Record<Role, string[]> = {
   candidate: ["Vacancies", "My applications", "Messages"],
-  hr: ["Vacancies", "Applications", "Shortlist", "Pipeline", "Reports"],
+  hr: ["Manage vacancies", "Applications", "Shortlist", "Pipeline", "Reports"],
   pm: ["New requisition", "My requisitions"],
   finance: ["Requisitions to review"],
   hiring_manager: ["Shortlists", "Interviews", "Final decisions"],
@@ -35,4 +35,5 @@ export const HREF: Record<string, string> = {
   "New requisition": "/requisitions/new/",
   "My requisitions": "/requisitions/",
   "Requisitions to review": "/requisitions/",
+  "Manage vacancies": "/vacancies/",
 };

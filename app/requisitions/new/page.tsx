@@ -11,6 +11,20 @@ const today = new Date().toISOString().slice(0, 10);
 const schema = z.object({
   role_title: z.string().trim().min(2, "Role title is required").max(120),
   role_level: z.string().min(1, "Choose a role level"),
+  employment_type: z.string().min(1, "Choose an employment type"),
+  work_arrangement: z.string().min(1, "Choose a work arrangement"),
+  department: z.string().trim().min(2, "Department is required").max(80),
+  min_experience_years: z
+    .number()
+    .int()
+    .min(0, "Experience cannot be negative")
+    .max(40, "Experience cannot exceed 40 years"),
+  contract_months: z
+    .number()
+    .int()
+    .min(1, "Duration must be between 1 and 60 months")
+    .max(60, "Duration must be between 1 and 60 months")
+    .nullable(),
   skills: z
     .array(z.string().trim().min(1).max(40))
     .min(1, "Add at least one skill")
@@ -31,6 +45,11 @@ function RequisitionForm() {
   const [f, setF] = useState({
     role_title: "",
     role_level: "",
+    employment_type: "",
+    work_arrangement: "",
+    department: "",
+    min_experience_years: "0",
+    contract_months: "",
     headcount: "1",
     needed_by: "",
     project_need: "",
@@ -39,6 +58,7 @@ function RequisitionForm() {
   const [errors, setErrors] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
   const [doneId, setDoneId] = useState<string | null>(null);
+
   const set =
     (k: keyof typeof f) =>
     (
@@ -48,12 +68,17 @@ function RequisitionForm() {
     ) =>
       setF({ ...f, [k]: e.target.value });
 
+  const needsDuration =
+    f.employment_type === "contract" || f.employment_type === "internship";
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     const parsed = schema.safeParse({
       ...f,
       skills,
       headcount: Number(f.headcount),
+      min_experience_years: Number(f.min_experience_years),
+      contract_months: needsDuration ? Number(f.contract_months) : null,
     });
     if (!parsed.success) {
       setErrors(parsed.error.issues.map((i) => i.message));
@@ -110,6 +135,64 @@ function RequisitionForm() {
               <option value="senior">Senior</option>
               <option value="lead">Lead</option>
             </select>
+          </label>
+        </p>
+        <p>
+          <label>
+            Employment type{" "}
+            <select value={f.employment_type} onChange={set("employment_type")}>
+              <option value="">Select…</option>
+              <option value="full_time">Full-time</option>
+              <option value="part_time">Part-time</option>
+              <option value="contract">Contract</option>
+              <option value="internship">Internship</option>
+            </select>
+          </label>
+        </p>
+        {needsDuration && (
+          <p>
+            <label>
+              Duration (months){" "}
+              <input
+                type="number"
+                min={1}
+                max={60}
+                value={f.contract_months}
+                onChange={set("contract_months")}
+              />
+            </label>
+          </p>
+        )}
+        <p>
+          <label>
+            Work arrangement{" "}
+            <select
+              value={f.work_arrangement}
+              onChange={set("work_arrangement")}
+            >
+              <option value="">Select…</option>
+              <option value="on_site">On-site</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="remote">Remote</option>
+            </select>
+          </label>
+        </p>
+        <p>
+          <label>
+            Department{" "}
+            <input value={f.department} onChange={set("department")} />
+          </label>
+        </p>
+        <p>
+          <label>
+            Minimum experience (years){" "}
+            <input
+              type="number"
+              min={0}
+              max={40}
+              value={f.min_experience_years}
+              onChange={set("min_experience_years")}
+            />
           </label>
         </p>
         <div>
