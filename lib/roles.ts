@@ -36,4 +36,5 @@ export const HREF: Record<string, string> = {
   "My requisitions": "/requisitions/",
   "Requisitions to review": "/requisitions/",
   "Manage vacancies": "/vacancies/",
+  Vacancies: "/jobs/",
 };

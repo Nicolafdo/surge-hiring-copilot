@@ -21,6 +21,7 @@ type Vac = {
   department: string;
   min_experience_years: number;
   contract_months: number | null;
+  nice_to_have_skills: string[];
 };
 
 function EditVacancy() {
@@ -37,7 +38,7 @@ function EditVacancy() {
     supabase
       .from("vacancies")
       .select(
-        "id, title, job_description, required_skills, location, closing_date, status, role_level, headcount, employment_type, work_arrangement, department, min_experience_years, contract_months",
+        "id, title, job_description, required_skills, location, closing_date, status, role_level, headcount, employment_type, nice_to_have_skills, work_arrangement, department, min_experience_years, contract_months",
       )
       .eq("id", id)
       .single()
@@ -78,6 +79,7 @@ function EditVacancy() {
       p_department: v.department,
       p_min_experience_years: v.min_experience_years,
       p_contract_months: v.contract_months,
+      p_nice_to_have: v.nice_to_have,
     });
     if (error) {
       console.error(error);
@@ -104,6 +106,7 @@ function EditVacancy() {
           department: vac.department,
           min_experience_years: vac.min_experience_years,
           contract_months: vac.contract_months,
+          nice_to_have: vac.nice_to_have_skills,
         }}
         submitLabel="Save changes"
         onSubmit={save}

@@ -66,6 +66,7 @@ function NewVacancy() {
       p_title: v.title,
       p_job_description: v.job_description,
       p_skills: v.skills,
+      p_nice_to_have: v.nice_to_have,
       p_location: v.location,
       p_closing_date: v.closing_date,
       p_role_level: v.role_level,
@@ -112,6 +113,7 @@ function NewVacancy() {
           department: req.department,
           min_experience_years: req.min_experience_years,
           contract_months: req.contract_months,
+          nice_to_have: [],
         }}
         submitLabel="Save draft vacancy"
         onSubmit={create}

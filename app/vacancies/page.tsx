@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import RoleGuard from "@/lib/components/RoleGuard";
@@ -22,36 +22,82 @@ type Req = {
   salary_max: number | null;
   salary_currency: string;
 };
+type Action = "publish" | "unpublish" | "close";
+
+const todayLK = () =>
+  new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Colombo" });
+
+function statusLabel(v: Vac) {
+  if (v.status === "draft") return "Draft";
+  if (v.status === "closed") return "Closed";
+  return v.closing_date >= todayLK()
+    ? "Published – accepting applications"
+    : "Published – past closing date";
+}
+
+function friendly(msg: string) {
+  if (msg.includes("Closing date has passed"))
+    return "The closing date has passed. Edit the vacancy and choose a new closing date before publishing.";
+  if (msg.includes("already closed")) return "This vacancy is already closed.";
+  return "Could not update the vacancy. Please try again.";
+}
 
 function List() {
   const [vacs, setVacs] = useState<Vac[] | null>(null);
   const [reqs, setReqs] = useState<Req[] | null>(null);
   const [err, setErr] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const [v, r] = await Promise.all([
+      supabase
+        .from("vacancies")
+        .select("id, requisition_id, title, status, location, closing_date")
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("requisitions")
+        .select(
+          "id, role_title, role_level, headcount, needed_by, salary_min, salary_max, salary_currency",
+        )
+        .eq("status", "approved")
+        .order("reviewed_at", { ascending: false }),
+    ]);
+    if (v.error || r.error) {
+      console.error(v.error ?? r.error);
+      setErr("Could not load data.");
+      return;
+    }
+    setVacs(v.data as Vac[]);
+    setReqs(r.data as Req[]);
+  }, []);
 
   useEffect(() => {
-    (async () => {
-      const [v, r] = await Promise.all([
-        supabase
-          .from("vacancies")
-          .select("id, requisition_id, title, status, location, closing_date")
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("requisitions")
-          .select(
-            "id, role_title, role_level, headcount, needed_by, salary_min, salary_max, salary_currency",
-          )
-          .eq("status", "approved")
-          .order("reviewed_at", { ascending: false }),
-      ]);
-      if (v.error || r.error) {
-        console.error(v.error ?? r.error);
-        setErr("Could not load data.");
-        return;
-      }
-      setVacs(v.data as Vac[]);
-      setReqs(r.data as Req[]);
-    })();
-  }, []);
+    load();
+  }, [load]);
+
+  async function act(v: Vac, action: Action) {
+    if (
+      action === "close" &&
+      !window.confirm(
+        `Close "${v.title}"? A closed vacancy cannot be reopened.`,
+      )
+    )
+      return;
+    setErr("");
+    setBusyId(v.id);
+    const { error } = await supabase.rpc("change_vacancy_status", {
+      p_id: v.id,
+      p_action: action,
+      p_reason: null,
+    });
+    setBusyId(null);
+    if (error) {
+      console.error(error);
+      setErr(friendly(error.message));
+      return;
+    }
+    await load();
+  }
 
   const waiting =
     reqs && vacs
@@ -115,7 +161,7 @@ function List() {
                   <th>Location</th>
                   <th>Closing date</th>
                   <th>Status</th>
-                  <th></th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -124,10 +170,40 @@ function List() {
                     <td>{v.title}</td>
                     <td>{v.location}</td>
                     <td>{v.closing_date}</td>
-                    <td>{v.status}</td>
+                    <td>{statusLabel(v)}</td>
                     <td>
                       {v.status === "draft" && (
-                        <Link href={`/vacancies/edit/?id=${v.id}`}>Edit</Link>
+                        <>
+                          <Link href={`/vacancies/edit/?id=${v.id}`}>Edit</Link>{" "}
+                          <button
+                            disabled={busyId === v.id}
+                            onClick={() => act(v, "publish")}
+                          >
+                            Publish
+                          </button>{" "}
+                          <button
+                            disabled={busyId === v.id}
+                            onClick={() => act(v, "close")}
+                          >
+                            Close
+                          </button>
+                        </>
+                      )}
+                      {v.status === "published" && (
+                        <>
+                          <button
+                            disabled={busyId === v.id}
+                            onClick={() => act(v, "unpublish")}
+                          >
+                            Unpublish to edit
+                          </button>{" "}
+                          <button
+                            disabled={busyId === v.id}
+                            onClick={() => act(v, "close")}
+                          >
+                            Close
+                          </button>
+                        </>
                       )}
                     </td>
                   </tr>
