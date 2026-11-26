@@ -5,6 +5,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import RoleGuard from "@/lib/components/RoleGuard";
 import JobFacts, { type Facts } from "@/lib/components/JobFacts";
+import { useAuth } from "@/lib/auth/AuthProvider";
 
 type Job = Facts & {
   id: string;
@@ -17,6 +18,7 @@ type Job = Facts & {
 };
 
 function JobView() {
+  const { profile } = useAuth();
   const id = useSearchParams().get("id");
   const [job, setJob] = useState<Job | null>(null);
   const [state, setState] = useState<"loading" | "ok" | "missing">("loading");
@@ -79,10 +81,10 @@ function JobView() {
         </>
       )}
       <h2>Apply</h2>
-      <p>
-        Applications are open until {job.closing_date}. The application form is
-        added in the next step (CP-01A).
-      </p>
+      <p>Applications are open until {job.closing_date}.</p>
+      {profile?.role === "candidate" && (
+        <Link href={`/jobs/apply/?id=${job.id}`}>Apply for this vacancy</Link>
+      )}
     </main>
   );
 }

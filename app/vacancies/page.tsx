@@ -39,6 +39,8 @@ function friendly(msg: string) {
   if (msg.includes("Closing date has passed"))
     return "The closing date has passed. Edit the vacancy and choose a new closing date before publishing.";
   if (msg.includes("already closed")) return "This vacancy is already closed.";
+  if (msg.includes("already has applications"))
+    return "This vacancy already has applications, so it can't be unpublished or edited. You can close it instead.";
   return "Could not update the vacancy. Please try again.";
 }
 

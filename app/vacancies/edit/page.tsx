@@ -83,7 +83,9 @@ function EditVacancy() {
     });
     if (error) {
       console.error(error);
-      return "Could not save the changes. Please try again.";
+      return error.message.includes("already has applications")
+        ? "This vacancy already has applications and can no longer be edited."
+        : "Could not save the changes. Please try again.";
     }
     router.replace("/vacancies/");
     return null;
