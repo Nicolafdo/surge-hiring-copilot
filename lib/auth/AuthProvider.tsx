@@ -8,7 +8,6 @@ export type AppRole =
   | "hr"
   | "pm"
   | "hiring_manager"
-  | "finance"
   | "management"
   | "interviewer"
   | "admin";

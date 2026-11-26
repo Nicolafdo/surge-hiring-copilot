@@ -18,9 +18,7 @@ type Req = {
   role_level: string;
   headcount: number;
   needed_by: string;
-  salary_min: number | null;
-  salary_max: number | null;
-  salary_currency: string;
+  submitted_by_name: string | null;
 };
 type Action = "publish" | "unpublish" | "close";
 
@@ -38,9 +36,9 @@ function statusLabel(v: Vac) {
 function friendly(msg: string) {
   if (msg.includes("Closing date has passed"))
     return "The closing date has passed. Edit the vacancy and choose a new closing date before publishing.";
-  if (msg.includes("already closed")) return "This vacancy is already closed.";
   if (msg.includes("already has applications"))
     return "This vacancy already has applications, so it can't be unpublished or edited. You can close it instead.";
+  if (msg.includes("already closed")) return "This vacancy is already closed.";
   return "Could not update the vacancy. Please try again.";
 }
 
@@ -59,10 +57,10 @@ function List() {
       supabase
         .from("requisitions")
         .select(
-          "id, role_title, role_level, headcount, needed_by, salary_min, salary_max, salary_currency",
+          "id, role_title, role_level, headcount, needed_by, submitted_by_name",
         )
-        .eq("status", "approved")
-        .order("reviewed_at", { ascending: false }),
+        .eq("status", "submitted")
+        .order("submitted_at", { ascending: false }),
     ]);
     if (v.error || r.error) {
       console.error(v.error ?? r.error);
@@ -101,11 +99,6 @@ function List() {
     await load();
   }
 
-  const waiting =
-    reqs && vacs
-      ? reqs.filter((r) => !vacs.some((v) => v.requisition_id === r.id))
-      : [];
-
   return (
     <main className="p-8">
       <h1>Vacancies</h1>
@@ -114,8 +107,8 @@ function List() {
 
       {vacs && reqs && (
         <>
-          <h2>Approved requisitions waiting for a vacancy</h2>
-          {waiting.length === 0 ? (
+          <h2>Requisitions waiting for a vacancy</h2>
+          {reqs.length === 0 ? (
             <p>None.</p>
           ) : (
             <table>
@@ -125,22 +118,18 @@ function List() {
                   <th>Level</th>
                   <th>Headcount</th>
                   <th>Needed by</th>
-                  <th>Approved range</th>
+                  <th>Submitted by</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {waiting.map((r) => (
+                {reqs.map((r) => (
                   <tr key={r.id}>
                     <td>{r.role_title}</td>
                     <td>{r.role_level}</td>
                     <td>{r.headcount}</td>
                     <td>{r.needed_by}</td>
-                    <td>
-                      {r.salary_currency}{" "}
-                      {Number(r.salary_min).toLocaleString()} –{" "}
-                      {Number(r.salary_max).toLocaleString()}
-                    </td>
+                    <td>{r.submitted_by_name}</td>
                     <td>
                       <Link href={`/vacancies/new/?requisition=${r.id}`}>
                         Create vacancy

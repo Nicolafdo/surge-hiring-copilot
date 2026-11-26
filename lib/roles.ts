@@ -3,7 +3,6 @@ export type Role =
   | "hr"
   | "pm"
   | "hiring_manager"
-  | "finance"
   | "management"
   | "interviewer"
   | "admin";
@@ -13,7 +12,6 @@ export const ROLE_LABEL: Record<Role, string> = {
   hr: "HR / Recruiter",
   pm: "Project Manager",
   hiring_manager: "Hiring Manager",
-  finance: "Finance",
   management: "Management",
   interviewer: "Interviewer",
   admin: "Admin",
@@ -24,10 +22,9 @@ export const NAV: Record<Role, string[]> = {
   candidate: ["Vacancies", "My applications", "Messages"],
   hr: ["Manage vacancies", "Applications", "Shortlist", "Pipeline", "Reports"],
   pm: ["New requisition", "My requisitions"],
-  finance: ["Requisitions to review"],
   hiring_manager: ["Shortlists", "Interviews", "Final decisions"],
   interviewer: ["My interviews", "My feedback"],
-  management: ["Reports", "Salary exceptions"],
+  management: ["Reports"],
   admin: [],
 };
 

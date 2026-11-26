@@ -108,7 +108,7 @@ function RequisitionForm() {
       <main className="p-8">
         <h1>Requisition submitted</h1>
         <p>
-          Sent to Finance for the budget and salary check. Reference:{" "}
+          Sent to HR, who will create the vacancy. Reference:{" "}
           {doneId.slice(0, 8)}
         </p>
         <Link href="/requisitions/">View my requisitions</Link>
@@ -235,9 +235,7 @@ function RequisitionForm() {
             ))}
           </ul>
         )}
-        <button disabled={busy}>
-          {busy ? "Submitting…" : "Submit to Finance"}
-        </button>
+        <button disabled={busy}>{busy ? "Submitting…" : "Submit to HR"}</button>
       </form>
     </main>
   );

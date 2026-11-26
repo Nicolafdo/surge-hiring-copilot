@@ -16,12 +16,8 @@ type Req = {
   employment_type: string;
   work_arrangement: string;
   department: string;
-  needed_by: string | null;
   min_experience_years: number;
   contract_months: number | null;
-  salary_min: number | null;
-  salary_max: number | null;
-  salary_currency: string;
 };
 
 function NewVacancy() {
@@ -38,12 +34,12 @@ function NewVacancy() {
     supabase
       .from("requisitions")
       .select(
-        "id, role_title, skills, status, role_level, needed_by, headcount, employment_type, work_arrangement, department, min_experience_years, contract_months, salary_min, salary_max, salary_currency",
+        "id, role_title, skills, status, role_level, headcount, employment_type, work_arrangement, department, min_experience_years, contract_months",
       )
       .eq("id", reqId)
       .single()
       .then(({ data, error }) => {
-        if (error || !data || data.status !== "approved") {
+        if (error || !data || data.status !== "submitted") {
           setErr("This requisition is not available for a vacancy.");
           return;
         }
@@ -79,7 +75,8 @@ function NewVacancy() {
     });
     if (error) {
       console.error(error);
-      return error.message.includes("already exists")
+      return error.message.includes("already exists") ||
+        error.message.includes("no vacancy yet")
         ? "A vacancy already exists for this requisition."
         : "Could not create the vacancy. Please try again.";
     }
@@ -92,11 +89,8 @@ function NewVacancy() {
       <h1>Create vacancy</h1>
       <p>
         <small>
-          Details are prefilled from the approved requisition and you can change
-          any of them. Finance approved {req.salary_currency}{" "}
-          {Number(req.salary_min).toLocaleString()} –{" "}
-          {Number(req.salary_max).toLocaleString()} per month for the
-          requisition as submitted.
+          Details are prefilled from the PM&apos;s requisition and you can
+          change any of them.
         </small>
       </p>
       <VacancyForm
@@ -104,8 +98,9 @@ function NewVacancy() {
           title: req.role_title,
           job_description: "",
           skills: req.skills,
+          nice_to_have: [],
           location: "",
-          closing_date: req.needed_by ? req.needed_by.slice(0, 10) : "",
+          closing_date: "",
           role_level: req.role_level,
           headcount: req.headcount,
           employment_type: req.employment_type,
@@ -113,7 +108,6 @@ function NewVacancy() {
           department: req.department,
           min_experience_years: req.min_experience_years,
           contract_months: req.contract_months,
-          nice_to_have: [],
         }}
         submitLabel="Save draft vacancy"
         onSubmit={create}
